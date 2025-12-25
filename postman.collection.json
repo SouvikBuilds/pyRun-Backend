@@ -1,0 +1,87 @@
+{
+  "info": {
+    "name": "Online Compiler API",
+    "description": "API collection for the online compiler server",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": ["{{baseUrl}}"],
+          "path": [""]
+        },
+        "description": "Health check endpoint to verify server is running"
+      },
+      "response": []
+    },
+    {
+      "name": "Run Code",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": \"print('Hello, World!')\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/code/run",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "code", "run"]
+        },
+        "description": "Execute Python code and return the result"
+      },
+      "response": []
+    },
+    {
+      "name": "Check Code Syntax",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": \"print('Hello, World!')\nprint(x)\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/code/check",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "code", "check"]
+        },
+        "description": "Check Python code for syntax errors without executing it"
+      },
+      "response": []
+    }
+  ]
+}

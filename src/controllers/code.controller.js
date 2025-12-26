@@ -6,11 +6,18 @@ import { runPython, checkPythonSyntax } from "../services/python.service.js";
 
 const runCode = asyncHandler(async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, input } = req.body;
     if (!code || code.trim() === "") {
       throw new ApiError(400, "Code is required");
     }
-    const result = await runPython(code);
+
+    const safeInput =
+      typeof input === "string" && input.length > 0
+        ? input.endsWith("\n")
+          ? input
+          : input + "\n"
+        : "";
+    const result = await runPython(code, safeInput);
     return res
       .status(200)
       .json(new ApiResponse(200, result, "Code executed successfully"));

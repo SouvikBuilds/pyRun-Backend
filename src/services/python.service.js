@@ -1,7 +1,7 @@
 import fs from "fs";
 import crypto from "crypto";
 import path from "path";
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 
 import { ApiError } from "../utils/ApiError.js";
 
@@ -25,47 +25,65 @@ const cleanupFile = (filePath) => {
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 };
 
-export const runPython = (code) => {
+// 🔹 RUN PYTHON CODE (with optional input)
+export const runPython = (code, input = "") => {
   return new Promise((resolve, reject) => {
     const filePath = createTempFile(code);
 
-    exec(
-      `python3 "${filePath}"`,
-      {
-        cwd: RUNTIME_DIR,
-        timeout: 3000,
-        maxBuffer: 1024 * 100,
-        env: { PATH: process.env.PATH },
-      },
-      (error, stdout, stderr) => {
+    const pythonProcess = spawn("python3", [filePath], {
+      cwd: RUNTIME_DIR,
+      env: { PATH: process.env.PATH },
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    let stdout = "";
+    let stderr = "";
+    let isResolved = false;
+
+    const timeout = setTimeout(() => {
+      if (!isResolved) {
+        pythonProcess.kill();
         cleanupFile(filePath);
-
-        if (error && error.killed) {
-          return reject(new ApiError(408, "Time Limit Exceeded"));
-        }
-
-        if (error && error.message?.includes("maxBuffer")) {
-          return reject(
-            new ApiError(
-              408,
-              "Output limit exceeded. Program terminated to prevent infinite execution."
-            )
-          );
-        }
-
-        if (stderr) {
-          return reject(new ApiError(400, stderr));
-        }
-        if (error) {
-          return reject(new ApiError(500, error.message || "Execution failed"));
-        }
-
-        resolve(stdout);
+        isResolved = true;
+        reject(new ApiError(408, "Time Limit Exceeded"));
       }
-    );
+    }, 5000);
+
+    pythonProcess.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    pythonProcess.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    pythonProcess.on("close", (code) => {
+      clearTimeout(timeout);
+      cleanupFile(filePath);
+      
+      if (isResolved) return;
+      isResolved = true;
+
+      if (stderr) {
+        return reject(new ApiError(400, stderr.trim()));
+      }
+
+      if (code !== 0) {
+        return reject(new ApiError(500, "Execution failed"));
+      }
+
+      resolve(stdout);
+    });
+
+    // Handle stdin properly
+    if (input && input.trim()) {
+      pythonProcess.stdin.write(input);
+    }
+    pythonProcess.stdin.end();
   });
 };
 
+// 🔹 SYNTAX CHECK
 export const checkPythonSyntax = (code) => {
   return new Promise((resolve, reject) => {
     const filePath = createTempFile(code);

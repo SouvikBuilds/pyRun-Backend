@@ -25,7 +25,6 @@ const cleanupFile = (filePath) => {
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 };
 
-// 🔹 RUN PYTHON CODE (with optional input)
 export const runPython = (code, input = "") => {
   return new Promise((resolve, reject) => {
     const filePath = createTempFile(code);
@@ -75,7 +74,7 @@ export const runPython = (code, input = "") => {
       resolve(stdout);
     });
 
-    // Handle stdin properly
+
     if (input && input.trim()) {
       pythonProcess.stdin.write(input);
     }
@@ -83,7 +82,7 @@ export const runPython = (code, input = "") => {
   });
 };
 
-// 🔹 SYNTAX CHECK
+
 export const checkPythonSyntax = (code) => {
   return new Promise((resolve, reject) => {
     const filePath = createTempFile(code);
